@@ -80,12 +80,12 @@ export class RedditWebviewProvider {
                         
                     case 'submitComment':
                         // TODO: Implement comment submission
-                        vscode.window.showInformationMessage('Comment submission coming soon!');
+                        await this.handleCommentSubmission(message.postId, message.comment);
                         break;
                         
                     case 'skipPost':
                         // TODO: Mark post as seen and show next
-                        vscode.window.showInformationMessage('Skip functionality coming soon!');
+                        await this.handleSkipPost(message.postId);
                         break;
                         
                     case 'openPost':
@@ -110,9 +110,51 @@ export class RedditWebviewProvider {
         });
     }
 
+    private async handleCommentSubmission(postId: string, comment: string) {
+        try {
+            // Show progress
+            vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: "Posting comment to Reddit...",
+                cancellable: false
+            }, async () => {
+                // Post the comment
+                const success = await this.redditService.postComment(postId, comment);
+                
+                if (success) {
+                    // Mark post as processed
+                    await this.storageService.markPostProcessed(postId);
+                    
+                    // Show success message
+                    vscode.window.showInformationMessage('Comment posted successfully!');
+                    
+                    // Load next post
+                    this.showNextPost();
+                } else {
+                    vscode.window.showErrorMessage('Failed to post comment. Please try again.');
+                }
+            });
+        } catch (error) {
+            console.error('Comment submission error:', error);
+            vscode.window.showErrorMessage('Error posting comment');
+        }
+    }
+
+    private async handleSkipPost(postId: string) {
+        // Mark as processed without commenting
+        await this.storageService.markPostProcessed(postId);
+        this.showNextPost();
+    }
+
+    private showNextPost() {
+        // Reload posts (this will naturally exclude processed posts)
+        this.loadPosts();
+    }
+
     private async loadPosts() {
         try {
             const settings = await this.storageService.getSettings();
+            const processedPosts = await this.storageService.getProcessedPosts();
             
             if (settings.subreddits.length === 0) {
                 this.panel?.webview.postMessage({
@@ -133,6 +175,7 @@ export class RedditWebviewProvider {
                 
                 // Fetch posts from all subreddits
                 const allPosts = await this.redditService.getMultipleSubreddits(settings.subreddits);
+                const unseenPosts = allPosts.filter(post => !processedPosts.includes(post.id));
                 
                 // Update progress
                 progress.report({ increment: 50, message: "Analyzing posts with AI..." });

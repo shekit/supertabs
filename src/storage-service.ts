@@ -5,6 +5,7 @@ export interface UserSettings {
     refreshInterval: number; // in seconds
     postsPerSubreddit: number;
     businessPrompt: string;
+    processedPosts: string[];
 }
 
 export class StorageService {
@@ -20,7 +21,8 @@ export class StorageService {
             subreddits: ['programming', 'webdev', 'node'],
             refreshInterval: 300, // 5 minutes
             postsPerSubreddit: 10,
-            businessPrompt: ''
+            businessPrompt: '',
+            processedPosts: []
         };
     }
 
@@ -44,5 +46,22 @@ export class StorageService {
             s => s.toLowerCase() !== subreddit.toLowerCase()
         );
         await this.updateSettings({ subreddits: settings.subreddits });
+    }
+
+    async markPostProcessed(postId: string): Promise<void> {
+        const settings = await this.getSettings();
+        if (!settings.processedPosts.includes(postId)) {
+            settings.processedPosts.push(postId);
+            await this.updateSettings({ processedPosts: settings.processedPosts });
+        }
+    }
+
+    async getProcessedPosts(): Promise<string[]> {
+        const settings = await this.getSettings();
+        return settings.processedPosts || [];
+    }
+
+    async clearOldProcessedPosts(daysToKeep: number = 7): Promise<void> {
+        // Optional: Clear posts older than X days to prevent list from growing forever
     }
 }
