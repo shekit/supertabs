@@ -4,6 +4,7 @@ export interface UserSettings {
     subreddits: string[];
     refreshInterval: number; // in seconds
     postsPerSubreddit: number;
+    businessPrompt: string;
 }
 
 export class StorageService {
@@ -18,7 +19,8 @@ export class StorageService {
         return settings || {
             subreddits: ['programming', 'webdev', 'node'],
             refreshInterval: 300, // 5 minutes
-            postsPerSubreddit: 10
+            postsPerSubreddit: 10,
+            businessPrompt: ''
         };
     }
 
