@@ -4,46 +4,37 @@ import express from 'express';
 import * as crypto from 'crypto';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
+import { REDDIT, ENV_VARS, STORAGE_KEYS, PATHS } from './constants/constants';
 
-dotenv.config({ path: path.join(__dirname, '..', '.env') }); // Load environment variables from .env file
+dotenv.config({ path: PATHS.ENV }); // Load environment variables from .env file
 
 export class RedditAuthProvider {
     private static readonly CLIENT_ID = process.env.REDDIT_CLIENT_ID || '';
     private static readonly CLIENT_SECRET = process.env.REDDIT_CLIENT_SECRET || '';
     
-    private static readonly REDIRECT_URI = 'http://localhost:54321/callback';
-    private static readonly USER_AGENT = 'VSCode:Supertabs:v1.0.0';
+    private static readonly REDIRECT_URI = REDDIT.REDIRECT_URI;
+    private static readonly USER_AGENT = REDDIT.USER_AGENT;
 
-    constructor(private context: vscode.ExtensionContext) {}
+    constructor(private context: vscode.ExtensionContext) {
+        if (!RedditAuthProvider.CLIENT_ID || !RedditAuthProvider.CLIENT_SECRET) {
+            vscode.window.showErrorMessage('Reddit credentials not found! Check your .env file.');
+        }
+    }
 
     async authenticate(): Promise<boolean> {
-        console.log('Reddit Client ID:', RedditAuthProvider.CLIENT_ID);
-        console.log('Reddit Client Secret:', RedditAuthProvider.CLIENT_SECRET);
         const state = crypto.randomBytes(32).toString('hex');
         
-        // Create authorization URL
-        const authUrl = `https://www.reddit.com/api/v1/authorize?` +
-            `client_id=${RedditAuthProvider.CLIENT_ID}` +
-            `&response_type=code` +
-            `&state=${state}` +
-            `&redirect_uri=${RedditAuthProvider.REDIRECT_URI}` +
-            `&duration=permanent` +
-            `&scope=read,submit,identity`;
-
-        // Start local server to receive callback
         const authCode = await this.startCallbackServer(state);
         
         if (!authCode) {
             return false;
         }
 
-        // Exchange code for token
         const token = await this.exchangeCodeForToken(authCode);
         
         if (token) {
-            // Store token securely
-            await this.context.secrets.store('reddit_access_token', token.access_token);
-            await this.context.secrets.store('reddit_refresh_token', token.refresh_token);
+            await this.context.secrets.store(STORAGE_KEYS.REDDIT_ACCESS_TOKEN, token.access_token);
+            await this.context.secrets.store(STORAGE_KEYS.REDDIT_REFRESH_TOKEN, token.refresh_token);
             return true;
         }
         
@@ -51,8 +42,8 @@ export class RedditAuthProvider {
     }
 
     async logout(): Promise<void> {
-        await this.context.secrets.delete('reddit_access_token');
-        await this.context.secrets.delete('reddit_refresh_token');
+        await this.context.secrets.delete(STORAGE_KEYS.REDDIT_ACCESS_TOKEN);
+        await this.context.secrets.delete(STORAGE_KEYS.REDDIT_REFRESH_TOKEN);
     }
 
     private startCallbackServer(expectedState: string): Promise<string | null> {
@@ -81,24 +72,22 @@ export class RedditAuthProvider {
                 server.close();
             });
             
-            const server = app.listen(54321, () => {
-                // Open browser for user to authenticate
-                vscode.env.openExternal(vscode.Uri.parse(
-                    `https://www.reddit.com/api/v1/authorize?` +
+            const server = app.listen(REDDIT.REDIRECT_PORT, () => {
+                const authUrl = `https://www.reddit.com/api/v1/authorize?` +
                     `client_id=${RedditAuthProvider.CLIENT_ID}` +
                     `&response_type=code` +
                     `&state=${expectedState}` +
                     `&redirect_uri=${RedditAuthProvider.REDIRECT_URI}` +
                     `&duration=permanent` +
-                    `&scope=read,submit,identity`
-                ));
+                    `&scope=${REDDIT.SCOPES}`;
+                    
+                vscode.env.openExternal(vscode.Uri.parse(authUrl));
             });
             
-            // Timeout after 2 minutes
             setTimeout(() => {
                 resolve(null);
                 server.close();
-            }, 120000);
+            }, REDDIT.OAUTH_TIMEOUT_MS);
         });
     }
 
@@ -126,6 +115,6 @@ export class RedditAuthProvider {
     }
 
     async getAccessToken(): Promise<string | undefined> {
-        return await this.context.secrets.get('reddit_access_token');
+        return await this.context.secrets.get(STORAGE_KEYS.REDDIT_ACCESS_TOKEN);
     }
 }

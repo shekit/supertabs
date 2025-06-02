@@ -4,8 +4,9 @@ import { RedditService } from './reddit-service';
 import { RedditWebviewProvider } from './webview-provider';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import { COMMANDS, PATHS, ENV_VARS, UI_TEXT } from './constants/constants';
 
-dotenv.config({ path: path.join(__dirname, '..', '.env') });
+dotenv.config({ path: PATHS.ENV });
 
 
 export function activate(context: vscode.ExtensionContext) {
@@ -16,7 +17,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const webviewProvider = new RedditWebviewProvider(context, redditService);
     
     // Register authenticate command
-    let authenticateCommand = vscode.commands.registerCommand('supertabs.authenticate', async () => {
+    let authenticateCommand = vscode.commands.registerCommand(COMMANDS.EXTENSION.AUTHENTICATE, async () => {
         vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: "Authenticating with Reddit...",
@@ -25,14 +26,15 @@ export function activate(context: vscode.ExtensionContext) {
             const success = await authProvider.authenticate();
             
             if (success) {
-                vscode.window.showInformationMessage('Successfully authenticated with Reddit!');
+                vscode.window.showInformationMessage(UI_TEXT.NOTIFICATIONS.AUTH_SUCCESS);
+                await redditService.testConnection();
             } else {
-                vscode.window.showErrorMessage('Authentication failed. Please try again.');
+                vscode.window.showErrorMessage(UI_TEXT.NOTIFICATIONS.AUTH_FAILED);
             }
         });
     });
 
-	let testFetchCommand = vscode.commands.registerCommand('supertabs.testFetch', async () => {
+	let testFetchCommand = vscode.commands.registerCommand(COMMANDS.EXTENSION.TEST_FETCH, async () => {
         const token = await authProvider.getAccessToken();
         if (!token) {
             vscode.window.showErrorMessage('Please authenticate first!');
@@ -44,9 +46,7 @@ export function activate(context: vscode.ExtensionContext) {
             value: 'programming'
         });
 
-        if (!subreddit) {
-			return;
-		}
+        if (!subreddit) return;
 
         vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
@@ -56,7 +56,6 @@ export function activate(context: vscode.ExtensionContext) {
             try {
                 const posts = await redditService.getSubredditPosts(subreddit);
                 
-                // Show quick pick with post titles
                 const selected = await vscode.window.showQuickPick(
                     posts.map(post => ({
                         label: post.title,
@@ -77,36 +76,33 @@ export function activate(context: vscode.ExtensionContext) {
         });
     });
 
-	let openFeedCommand = vscode.commands.registerCommand('supertabs.openFeed', async () => {
-		const token = await authProvider.getAccessToken();
-		if (!token) {
-			const choice = await vscode.window.showWarningMessage(
-				'You need to authenticate with Reddit first',
-				'Authenticate'
-			);
-			if (choice === 'Authenticate') {
-				await vscode.commands.executeCommand('supertabs.authenticate');
-			}
-			return;
-		}
-		
-		await webviewProvider.show();
-	});
+	let openFeedCommand = vscode.commands.registerCommand(COMMANDS.EXTENSION.OPEN_FEED, async () => {
+        const token = await authProvider.getAccessToken();
+        if (!token) {
+            const choice = await vscode.window.showWarningMessage(
+                'You need to authenticate with Reddit first',
+                'Authenticate'
+            );
+            if (choice === 'Authenticate') {
+                await vscode.commands.executeCommand(COMMANDS.EXTENSION.AUTHENTICATE);
+            }
+            return;
+        }
+        
+        await webviewProvider.show();
+    });
 
-	let logoutCommand = vscode.commands.registerCommand('supertabs.logout', async () => {
-		await authProvider.logout();
-		vscode.window.showInformationMessage('Logged out of Reddit');
-	});
+	let logoutCommand = vscode.commands.registerCommand(COMMANDS.EXTENSION.LOGOUT, async () => {
+        await authProvider.logout();
+        vscode.window.showInformationMessage('Logged out of Reddit');
+    });
 
-	let test = vscode.commands.registerCommand('supertabs.test', async () => {
-		console.log('Test command executed');
-	});
-
-    context.subscriptions.push(authenticateCommand);
-	context.subscriptions.push(testFetchCommand);
-	context.subscriptions.push(openFeedCommand);
-	context.subscriptions.push(logoutCommand);
-	context.subscriptions.push(test);
+	context.subscriptions.push(
+        authenticateCommand, 
+        testFetchCommand, 
+        openFeedCommand,
+        logoutCommand
+    );
 }
 
 export function deactivate() {}

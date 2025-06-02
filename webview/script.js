@@ -1,3 +1,24 @@
+const { commands } = require("vscode");
+
+const COMMANDS = {
+    READY: 'ready',
+    ADD_SUBREDDIT: 'addSubreddit',
+    REMOVE_SUBREDDIT: 'removeSubreddit',
+    UPDATE_PROMPT: 'updatePrompt',
+    SUBMIT_COMMENT: 'submitComment',
+    SKIP_POST: 'skipPost',
+    OPEN_POST: 'openPost',
+    UPDATE_REFRESH_INTERVAL: 'updateRefreshInterval',
+    REFRESH: 'refresh'
+};
+
+const MESSAGE_TYPES = {
+    SETTINGS: 'settings',
+    POSTS: 'posts',
+    ERROR: 'error',
+    REFRESH_STATUS: 'refreshStatus'
+};
+
 const vscode = acquireVsCodeApi();
 let currentSettings = { 
     subreddits: [], 
@@ -8,24 +29,24 @@ let nextRefreshTime = null;
 let countdownInterval = null;
 
 // Initialize
-vscode.postMessage({ command: 'ready' });
+vscode.postMessage({ command: COMMANDS.READY });
 
 // Listen for messages
 window.addEventListener('message', event => {
     const message = event.data;
     
     switch (message.type) {
-        case 'settings':
+        case MESSAGE_TYPES.SETTINGS:
             currentSettings = message.data;
             updateUI();
             break;
-        case 'posts':
+        case MESSAGE_TYPES.POSTS:
             displayPosts(message.data);
             break;
-        case 'error':
+        case MESSAGE_TYPES.ERROR:
             showError(message.message);
             break;
-        case 'refreshStatus':
+        case MESSAGE_TYPES.REFRESH_STATUS:
             updateRefreshStatus(message.nextRefresh);
             break;
     }
@@ -54,7 +75,7 @@ function addSubreddit() {
     
     if (subreddit && !currentSettings.subreddits.includes(subreddit)) {
         vscode.postMessage({ 
-            command: 'addSubreddit', 
+            command: commands.ADD_SUBREDDIT, 
             subreddit: subreddit 
         });
         input.value = '';
@@ -63,7 +84,7 @@ function addSubreddit() {
 
 function removeSubreddit(subreddit) {
     vscode.postMessage({ 
-        command: 'removeSubreddit', 
+        command: commands.REMOVE_SUBREDDIT, 
         subreddit: subreddit 
     });
 }
@@ -71,7 +92,7 @@ function removeSubreddit(subreddit) {
 function savePrompt() {
     const prompt = document.getElementById('businessPrompt').value;
     vscode.postMessage({ 
-        command: 'updatePrompt', 
+        command: commands.UPDATE_PROMPT, 
         prompt: prompt 
     });
 }
@@ -80,7 +101,7 @@ function updateRefreshInterval() {
     const interval = parseInt(document.getElementById('refreshInterval').value);
     if (interval >= 60 && interval <= 3600) {
         vscode.postMessage({ 
-            command: 'updateRefreshInterval', 
+            command: commands.UPDATE_REFRESH_INTERVAL, 
             interval: interval 
         });
     } else {
@@ -89,7 +110,7 @@ function updateRefreshInterval() {
 }
 
 function manualRefresh() {
-    vscode.postMessage({ command: 'refresh' });
+    vscode.postMessage({ command: commands.REFRESH });
 }
 
 function updateRefreshStatus(nextRefresh) {
@@ -153,7 +174,7 @@ function submitComment(postId) {
     const comment = document.getElementById('commentText').value;
     if (comment.trim()) {
         vscode.postMessage({ 
-            command: 'submitComment', 
+            command: commands.SUBMIT_COMMENT, 
             postId: postId,
             comment: comment 
         });
@@ -162,7 +183,7 @@ function submitComment(postId) {
 
 function skipPost(postId) {
     vscode.postMessage({ 
-        command: 'skipPost', 
+        command: commands.SKIP_POST, 
         postId: postId 
     });
 }

@@ -3,8 +3,9 @@ import { RedditPost } from './reddit-service';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
+import { ENV_VARS, PATHS, RESOURCES, MODELS } from './constants/constants';
 
-dotenv.config({ path: path.join(__dirname, '..', '.env') });
+dotenv.config({ path: PATHS.ENV });
 
 export interface PostRelevance {
     postId: string;
@@ -30,11 +31,11 @@ export class LLMService {
         });
         
         // Load system prompt from file
-        const promptPath = path.join(__dirname, '..', 'prompts', 'filter-prompt.txt');
+        const promptPath = path.join(__dirname, '..', '..', PATHS.PROMPTS, RESOURCES.PROMPTS.FILTER);
         this.systemPrompt = fs.readFileSync(promptPath, 'utf-8');
 
         // Load tool definition from file
-        const toolPath = path.join(__dirname, '..', 'tools', 'analyze-posts-tool.json');
+        const toolPath = path.join(__dirname, '..', '..', PATHS.TOOLS, RESOURCES.TOOLS.ANALYZE_POSTS);
         this.analyzePostsTool = JSON.parse(fs.readFileSync(toolPath, 'utf-8'));
     }
     
@@ -54,7 +55,7 @@ export class LLMService {
             }));
             
             const response = await this.anthropic.messages.create({
-                model: 'claude-sonnet-4-20250514',
+                model: MODELS.CLAUDE,
                 max_tokens: 8196,
                 temperature: 0,
                 system: this.systemPrompt,
@@ -62,7 +63,7 @@ export class LLMService {
                     role: 'user',
                     content: `Business/Expertise Context: ${businessPrompt}
 
-Analyze these Reddit posts and determine which ones are relevant for someone with the above expertise to comment on.`
+                    Analyze these Reddit posts and determine which ones are relevant for someone with the above expertise to comment on.`
                 }],
                 tools: [this.analyzePostsTool],
                 tool_choice: { type: 'tool', name: 'analyze_posts' }

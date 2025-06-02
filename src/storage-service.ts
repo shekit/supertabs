@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { STORAGE_KEYS } from './constants/constants';
 
 export interface UserSettings {
     subreddits: string[];
@@ -9,7 +10,7 @@ export interface UserSettings {
 }
 
 export class StorageService {
-    private readonly SETTINGS_KEY = 'supertabs.settings';
+    private readonly SETTINGS_KEY = STORAGE_KEYS.SETTINGS;
     
     constructor(private context: vscode.ExtensionContext) {}
 

@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import * as vscode from 'vscode';
 import { RedditAuthProvider } from './auth';
+import { REDDIT } from './constants/constants';
 
 export interface RedditPost {
     id: string;
@@ -18,7 +19,7 @@ export interface RedditPost {
 
 export class RedditService {
     private axiosInstance: AxiosInstance;
-    private readonly USER_AGENT = 'VSCode:Supertabs:v1.0.0';
+    private readonly USER_AGENT = REDDIT.USER_AGENT;
 
     constructor(
         private context: vscode.ExtensionContext,
