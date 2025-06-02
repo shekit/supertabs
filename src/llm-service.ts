@@ -20,6 +20,7 @@ export class LLMService {
     
     constructor() {
         const apiKey = process.env.CLAUDE_API_KEY;
+  
         if (!apiKey) {
             throw new Error('CLAUDE_API_KEY not found in environment variables');
         }
@@ -33,7 +34,7 @@ export class LLMService {
         this.systemPrompt = fs.readFileSync(promptPath, 'utf-8');
 
         // Load tool definition from file
-        const toolPath = path.join(__dirname, '..', '..', 'tools', 'analyze-posts-tool.json');
+        const toolPath = path.join(__dirname, '..', 'tools', 'analyze-posts-tool.json');
         this.analyzePostsTool = JSON.parse(fs.readFileSync(toolPath, 'utf-8'));
     }
     
