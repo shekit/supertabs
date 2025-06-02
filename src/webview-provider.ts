@@ -1,22 +1,24 @@
 import * as vscode from 'vscode';
 import { RedditService } from './reddit-service';
+import { StorageService } from './storage-service';
 
 export class RedditWebviewProvider {
     private panel: vscode.WebviewPanel | undefined;
+    private storageService: StorageService;
 
     constructor(
         private context: vscode.ExtensionContext,
         private redditService: RedditService
-    ) {}
+    ) {
+        this.storageService = new StorageService(context);
+    }
 
     public async show() {
-        // If panel already exists, show it
         if (this.panel) {
             this.panel.reveal();
             return;
         }
 
-        // Create new panel
         this.panel = vscode.window.createWebviewPanel(
             'supertabs.redditFeed',
             'Supertabs',
@@ -31,13 +33,11 @@ export class RedditWebviewProvider {
             }
         );
 
-        // Set icon
         this.panel.iconPath = {
             light: vscode.Uri.joinPath(this.context.extensionUri, 'media', 'reddit-icon.svg'),
             dark: vscode.Uri.joinPath(this.context.extensionUri, 'media', 'reddit-icon.svg')
         };
 
-        // Set HTML content
         this.panel.webview.html = this.getWebviewContent();
 
         // Handle messages from webview
@@ -46,11 +46,40 @@ export class RedditWebviewProvider {
                 switch (message.command) {
                     case 'ready':
                         console.log('Webview is ready');
-                        await this.loadInitialData();
+                        await this.sendCurrentSettings();
+                        await this.loadPosts();
                         break;
-                    case 'refresh':
-                        await this.loadInitialData();
+                        
+                    case 'addSubreddit':
+                        await this.storageService.addSubreddit(message.subreddit);
+                        await this.sendCurrentSettings();
+                        await this.loadPosts();
+                        vscode.window.showInformationMessage(`Added r/${message.subreddit}`);
                         break;
+                        
+                    case 'removeSubreddit':
+                        await this.storageService.removeSubreddit(message.subreddit);
+                        await this.sendCurrentSettings();
+                        await this.loadPosts();
+                        break;
+                        
+                    case 'updatePrompt':
+                        await this.storageService.updateSettings({ businessPrompt: message.prompt });
+                        vscode.window.showInformationMessage('Business prompt saved!');
+                        // Reload posts with new filtering
+                        await this.loadPosts();
+                        break;
+                        
+                    case 'submitComment':
+                        // TODO: Implement comment submission
+                        vscode.window.showInformationMessage('Comment submission coming soon!');
+                        break;
+                        
+                    case 'skipPost':
+                        // TODO: Mark post as seen and show next
+                        vscode.window.showInformationMessage('Skip functionality coming soon!');
+                        break;
+                        
                     case 'openPost':
                         vscode.env.openExternal(vscode.Uri.parse(message.url));
                         break;
@@ -60,22 +89,49 @@ export class RedditWebviewProvider {
             this.context.subscriptions
         );
 
-        // Clean up when panel is closed
         this.panel.onDidDispose(() => {
             this.panel = undefined;
         }, null, this.context.subscriptions);
     }
 
-    private async loadInitialData() {
+    private async sendCurrentSettings() {
+        const settings = await this.storageService.getSettings();
+        this.panel?.webview.postMessage({
+            type: 'settings',
+            data: settings
+        });
+    }
+
+    private async loadPosts() {
         try {
-            // Test with a default subreddit
-            const posts = await this.redditService.getSubredditPosts('programming', 'hot', 10);
+            const settings = await this.storageService.getSettings();
             
-            // Send posts to webview
-            this.panel?.webview.postMessage({
-                type: 'posts',
-                data: posts
+            if (settings.subreddits.length === 0) {
+                this.panel?.webview.postMessage({
+                    type: 'posts',
+                    data: []
+                });
+                return;
+            }
+
+            // Show loading state
+            vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: "Loading posts from Reddit...",
+                cancellable: false
+            }, async () => {
+                // Fetch posts from all subreddits
+                const allPosts = await this.redditService.getMultipleSubreddits(settings.subreddits);
+                
+                // For now, send all posts (we'll add LLM filtering next)
+                // TODO: Filter posts through LLM based on businessPrompt
+                
+                this.panel?.webview.postMessage({
+                    type: 'posts',
+                    data: allPosts.slice(0, 10) // Limit to 10 for now
+                });
             });
+
         } catch (error) {
             console.error('Failed to load posts:', error);
             this.panel?.webview.postMessage({
@@ -86,6 +142,7 @@ export class RedditWebviewProvider {
     }
 
     private getWebviewContent(): string {
+        // ... (keep the same HTML content from the previous step)
         return `<!DOCTYPE html>
         <html lang="en">
         <head>
