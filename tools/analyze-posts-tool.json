@@ -1,0 +1,37 @@
+{
+  "name": "analyze_posts",
+  "description": "Analyze Reddit posts for relevance based on user expertise",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "posts": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "postId": {
+              "type": "string",
+              "description": "The ID of the Reddit post"
+            },
+            "isRelevant": {
+              "type": "boolean",
+              "description": "Whether the post is relevant for the user to comment on"
+            },
+            "relevanceScore": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10,
+              "description": "Relevance score from 1-10"
+            },
+            "reasoning": {
+              "type": "string",
+              "description": "Brief explanation of why this post is/isnt relevant"
+            }
+          },
+          "required": ["postId", "isRelevant", "relevanceScore", "reasoning"]
+        }
+      }
+    },
+    "required": ["posts"]
+  }
+}

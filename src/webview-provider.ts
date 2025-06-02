@@ -1,16 +1,24 @@
 import * as vscode from 'vscode';
 import { RedditService } from './reddit-service';
 import { StorageService } from './storage-service';
+import { LLMService } from './llm-service';
 
 export class RedditWebviewProvider {
     private panel: vscode.WebviewPanel | undefined;
     private storageService: StorageService;
+    private llmService: LLMService | undefined;
 
     constructor(
         private context: vscode.ExtensionContext,
         private redditService: RedditService
     ) {
         this.storageService = new StorageService(context);
+        try {
+            this.llmService = new LLMService();
+        } catch (error) {
+            console.error('Failed to initialize LLM service:', error);
+            vscode.window.showErrorMessage('Claude API key not found. Posts will not be filtered.');
+        }
     }
 
     public async show() {
@@ -115,20 +123,35 @@ export class RedditWebviewProvider {
             }
 
             // Show loading state
-            vscode.window.withProgress({
+            await vscode.window.withProgress({
                 location: vscode.ProgressLocation.Notification,
-                title: "Loading posts from Reddit...",
+                title: "Loading and filtering posts...",
                 cancellable: false
-            }, async () => {
+            }, async (progress) => {
+                // Update progress
+                progress.report({ increment: 0, message: "Fetching posts from Reddit..." });
+                
                 // Fetch posts from all subreddits
                 const allPosts = await this.redditService.getMultipleSubreddits(settings.subreddits);
                 
-                // For now, send all posts (we'll add LLM filtering next)
-                // TODO: Filter posts through LLM based on businessPrompt
+                // Update progress
+                progress.report({ increment: 50, message: "Analyzing posts with AI..." });
                 
+                // Filter posts through LLM if available and prompt is set
+                let filteredPosts = allPosts;
+                if (this.llmService && settings.businessPrompt) {
+                    filteredPosts = await this.llmService.filterPosts(allPosts, settings.businessPrompt);
+                    
+                    // Show filtering results
+                    vscode.window.showInformationMessage(
+                        `Found ${filteredPosts.length} relevant posts out of ${allPosts.length} total`
+                    );
+                }
+                
+                // Send filtered posts to webview
                 this.panel?.webview.postMessage({
                     type: 'posts',
-                    data: allPosts.slice(0, 10) // Limit to 10 for now
+                    data: filteredPosts.slice(0, 10) // Limit to 10 for now
                 });
             });
 

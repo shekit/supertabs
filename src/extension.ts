@@ -5,7 +5,6 @@ import { RedditWebviewProvider } from './webview-provider';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
-// Load environment variables
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 
