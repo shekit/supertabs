@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supertabs</title>
+    <link rel="stylesheet" href="${styleUri}">
+</head>
+<body>
+    <div class="container">
+        <!-- Subreddit Management -->
+        <div class="settings-section">
+            <div class="section-title">Tracked Subreddits</div>
+            <div class="input-group">
+                <input type="text" id="subredditInput" placeholder="Enter subreddit name (e.g., webdev)">
+                <button onclick="addSubreddit()">Add</button>
+            </div>
+            <div class="subreddit-list" id="subredditList">
+                <!-- Subreddits will be displayed here -->
+            </div>
+        </div>
+        
+        <!-- Business Prompt -->
+        <div class="settings-section">
+            <div class="section-title">Your Business/Interests</div>
+            <textarea id="businessPrompt" placeholder="Describe your business, products, or expertise. This helps filter relevant posts where you can add value..."></textarea>
+            <div class="help-text">This prompt helps the AI identify posts relevant to your expertise</div>
+            <button onclick="savePrompt()" style="margin-top: 8px;">Save Prompt</button>
+        </div>
+        
+        <!-- Auto-Refresh Settings -->
+        <div class="settings-section">
+            <div class="section-title">Auto-Refresh Settings</div>
+            <div class="refresh-controls">
+                <div class="input-group">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        Refresh every: 
+                        <input type="number" id="refreshInterval" min="60" max="3600" value="300">
+                        seconds
+                    </label>
+                    <button onclick="updateRefreshInterval()">Update</button>
+                </div>
+                <div>
+                    <span id="refreshStatus" style="color: var(--vscode-descriptionForeground); font-size: 12px;">
+                        Next refresh: <span id="refreshCountdown">--</span>
+                    </span>
+                </div>
+            </div>
+            <div class="help-text">Minimum: 60 seconds. Recommended: 300 seconds (5 minutes)</div>
+        </div>
+        
+        <!-- Posts -->
+        <div class="posts-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div class="section-title">Relevant Posts</div>
+                <button onclick="manualRefresh()" style="font-size: 12px;">Refresh Now</button>
+            </div>
+            <div id="postsContainer">
+                <div class="loading">No posts loaded yet. Settings will auto-save and posts will refresh soon...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="${scriptUri}"></script>
+</body>
+</html>
