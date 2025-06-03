@@ -3,9 +3,9 @@ import { RedditPost } from './reddit-service';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
-import { ENV_VARS, PATHS, RESOURCES, MODELS } from './constants/constants';
+import { PATHS, RESOURCES, MODELS } from './constants/constants';
 
-dotenv.config({ path: PATHS.ENV });
+dotenv.config({ path: path.join(__dirname, '..', PATHS.ENV) });
 
 export interface PostRelevance {
     postId: string;
@@ -31,11 +31,11 @@ export class LLMService {
         });
         
         // Load system prompt from file
-        const promptPath = path.join(__dirname, '..', '..', PATHS.PROMPTS, RESOURCES.PROMPTS.FILTER);
+        const promptPath = path.join(__dirname, '..', PATHS.PROMPTS, RESOURCES.PROMPTS.FILTER);
         this.systemPrompt = fs.readFileSync(promptPath, 'utf-8');
 
         // Load tool definition from file
-        const toolPath = path.join(__dirname, '..', '..', PATHS.TOOLS, RESOURCES.TOOLS.ANALYZE_POSTS);
+        const toolPath = path.join(__dirname, '..', PATHS.TOOLS, RESOURCES.TOOLS.ANALYZE_POSTS);
         this.analyzePostsTool = JSON.parse(fs.readFileSync(toolPath, 'utf-8'));
     }
     

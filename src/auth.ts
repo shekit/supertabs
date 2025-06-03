@@ -4,9 +4,9 @@ import express from 'express';
 import * as crypto from 'crypto';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
-import { REDDIT, ENV_VARS, STORAGE_KEYS, PATHS } from './constants/constants';
+import { REDDIT, STORAGE_KEYS, PATHS } from './constants/constants';
 
-dotenv.config({ path: PATHS.ENV }); // Load environment variables from .env file
+dotenv.config({ path: path.join(__dirname, '..', PATHS.ENV) });
 
 export class RedditAuthProvider {
     private static readonly CLIENT_ID = process.env.REDDIT_CLIENT_ID || '';

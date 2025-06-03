@@ -1,5 +1,3 @@
-const { commands } = require("vscode");
-
 const COMMANDS = {
     READY: 'ready',
     ADD_SUBREDDIT: 'addSubreddit',

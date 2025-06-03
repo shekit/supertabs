@@ -46,7 +46,7 @@ export const PATHS = {
     DIST: 'dist',
     PROMPTS: 'prompts',
     TOOLS: 'tools',
-    ENV: path.join(__dirname, '..', '.env'),
+    ENV: '.env',
 } as const;
 
 // Resource files
@@ -81,13 +81,6 @@ export const REDDIT = {
     REDIRECT_PORT: 54321,
     OAUTH_TIMEOUT_MS: 120000, // 2 minutes
     SCOPES: 'read,submit,identity'
-} as const;
-
-// Environment variable names
-export const ENV_VARS = {
-    REDDIT_CLIENT_ID: 'REDDIT_CLIENT_ID',
-    REDDIT_CLIENT_SECRET: 'REDDIT_CLIENT_SECRET',
-    CLAUDE_API_KEY: 'CLAUDE_API_KEY'
 } as const;
 
 // API models

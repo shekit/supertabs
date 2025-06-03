@@ -4,10 +4,9 @@ import { RedditService } from './reddit-service';
 import { RedditWebviewProvider } from './webview-provider';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
-import { COMMANDS, PATHS, ENV_VARS, UI_TEXT } from './constants/constants';
+import { COMMANDS, PATHS, UI_TEXT } from './constants/constants';
 
-dotenv.config({ path: PATHS.ENV });
-
+dotenv.config({ path: path.join(__dirname, '..', PATHS.ENV) });
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Supertabs is now active!');
