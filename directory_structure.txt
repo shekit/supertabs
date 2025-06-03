@@ -1,0 +1,32 @@
+.
+├── CHANGELOG.md
+├── README.md
+├── directory_structure.txt
+├── eslint.config.mjs
+├── media
+│   └── reddit-icon.svg
+├── package-lock.json
+├── package.json
+├── prompts
+│   └── filter-prompt.txt
+├── src
+│   ├── auth.ts
+│   ├── constants
+│   │   └── constants.ts
+│   ├── extension.ts
+│   ├── llm-service.ts
+│   ├── reddit-service.ts
+│   ├── storage-service.ts
+│   ├── test
+│   │   └── extension.test.ts
+│   └── webview-provider.ts
+├── tools
+│   └── analyze-posts-tool.json
+├── tsconfig.json
+├── vsc-extension-quickstart.md
+└── webview
+    ├── index.html
+    ├── script.js
+    └── styles.css
+
+8 directories, 22 files
