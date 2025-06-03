@@ -245,6 +245,31 @@ function updateCountdown() {
         `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
+function renderMarkdown(text) {
+    if (!text) return 'No text content';
+    
+    // Basic markdown rendering (you might want a proper library later)
+    let html = text
+        // Headers
+        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+        // Bold
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        // Italic
+        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+        // Links
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
+        // Line breaks
+        .replace(/\n/g, '<br>')
+        // Code blocks
+        .replace(/```([^`]+)```/g, '<pre><code>$1</code></pre>')
+        // Inline code
+        .replace(/`([^`]+)`/g, '<code>$1</code>');
+    
+    return html;
+}
+
 // Post Display
 function displayPosts(posts) {
     const container = document.getElementById('postsContainer');
@@ -254,13 +279,34 @@ function displayPosts(posts) {
         return;
     }
     
-    // Show only the first post
     const post = posts[0];
+    
+    // Check if post has media
+    let mediaHtml = '';
+    if (post.post_hint === 'image' || (post.url && /\.(jpg|jpeg|png|gif)$/i.test(post.url))) {
+        mediaHtml = `<img src="${post.url}" alt="${escapeHtml(post.title)}" style="max-width: 100%; margin: 16px 0;">`;
+    } else if (post.is_video || post.post_hint === 'hosted:video') {
+        // Reddit hosted video
+        const videoUrl = post.media?.reddit_video?.fallback_url || post.url;
+        mediaHtml = `<video controls style="max-width: 100%; margin: 16px 0;">
+            <source src="${videoUrl}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>`;
+    } else if (post.url && post.url !== post.permalink) {
+        // External link
+        mediaHtml = `<div style="margin: 16px 0;">
+            <a href="${post.url}" target="_blank" style="color: var(--vscode-textLink-foreground);">
+                🔗 ${post.url}
+            </a>
+        </div>`;
+    }
+    
     container.innerHTML = `
         <div class="post-card">
             <div class="post-title">${escapeHtml(post.title)}</div>
             <div class="post-meta">r/${post.subreddit} • by u/${post.author} • ${getTimeAgo(post.created_utc)}</div>
-            <div class="post-content">${escapeHtml(post.selftext || 'No text content')}</div>
+            ${mediaHtml}
+            <div class="post-content">${renderMarkdown(post.selftext)}</div>
             <div class="comment-section">
                 <textarea id="commentText" placeholder="Write your comment..." rows="4"></textarea>
                 <div class="comment-actions">

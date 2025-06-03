@@ -3,7 +3,7 @@ import { STORAGE_KEYS } from './constants/constants';
 
 export interface UserSettings {
     subreddits: string[];
-    refreshInterval: number; // in seconds
+    refreshInterval: number;
     postsPerSubreddit: number;
     businessPrompt: string;
     processedPosts: string[];
@@ -17,14 +17,26 @@ export class StorageService {
     async getSettings(): Promise<UserSettings> {
         const settings = this.context.globalState.get<UserSettings>(this.SETTINGS_KEY);
         
-        // Return defaults if no settings exist
-        return settings || {
+        // Default settings
+        const defaults: UserSettings = {
             subreddits: ['programming', 'webdev', 'node'],
-            refreshInterval: 300, // 5 minutes
+            refreshInterval: 300,
             postsPerSubreddit: 10,
             businessPrompt: '',
             processedPosts: []
         };
+        
+        // Merge settings with defaults to ensure all fields exist
+        if (settings) {
+            return {
+                ...defaults,
+                ...settings,
+                // Ensure processedPosts is always an array
+                processedPosts: settings.processedPosts || []
+            };
+        }
+        
+        return defaults;
     }
 
     async updateSettings(settings: Partial<UserSettings>): Promise<void> {
@@ -51,6 +63,12 @@ export class StorageService {
 
     async markPostProcessed(postId: string): Promise<void> {
         const settings = await this.getSettings();
+        
+        // Ensure processedPosts exists and is an array
+        if (!settings.processedPosts) {
+            settings.processedPosts = [];
+        }
+        
         if (!settings.processedPosts.includes(postId)) {
             settings.processedPosts.push(postId);
             await this.updateSettings({ processedPosts: settings.processedPosts });
@@ -62,7 +80,7 @@ export class StorageService {
         return settings.processedPosts || [];
     }
 
-    async clearOldProcessedPosts(daysToKeep: number = 7): Promise<void> {
-        // Optional: Clear posts older than X days to prevent list from growing forever
+    async clearProcessedPosts(): Promise<void> {
+        await this.updateSettings({ processedPosts: [] });
     }
 }

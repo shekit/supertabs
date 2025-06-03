@@ -80,7 +80,8 @@ export const REDDIT = {
     REDIRECT_URI: 'http://localhost:54321/callback',
     REDIRECT_PORT: 54321,
     OAUTH_TIMEOUT_MS: 120000, // 2 minutes
-    SCOPES: 'read,submit,identity'
+    SCOPES: 'read,submit,identity',
+    NUM_POSTS: 5
 } as const;
 
 // API models

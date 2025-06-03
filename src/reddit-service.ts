@@ -15,6 +15,10 @@ export interface RedditPost {
     score: number;
     num_comments: number;
     link_flair_text?: string;
+    post_hint?: string;
+    is_video?: boolean;
+    media?: any;
+    preview?: any;
 }
 
 export class RedditService {
@@ -54,7 +58,7 @@ export class RedditService {
         }
     }
 
-    async getSubredditPosts(subreddit: string, sort: 'hot' | 'new' | 'rising' = 'new', limit: number = 25): Promise<RedditPost[]> {
+    async getSubredditPosts(subreddit: string, sort: 'hot' | 'new' | 'rising' = 'new', limit: number = REDDIT.NUM_POSTS): Promise<RedditPost[]> {
         try {
             const response = await this.axiosInstance.get(`/r/${subreddit}/${sort}`, {
                 params: { limit, raw_json: 1 }
@@ -71,7 +75,11 @@ export class RedditService {
                 permalink: `https://reddit.com${child.data.permalink}`,
                 score: child.data.score,
                 num_comments: child.data.num_comments,
-                link_flair_text: child.data.link_flair_text
+                link_flair_text: child.data.link_flair_text,
+                post_hint: child.data.post_hint,
+                is_video: child.data.is_video,
+                media: child.data.media,
+                preview: child.data.preview
             }));
 
             return posts;

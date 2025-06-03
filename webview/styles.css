@@ -205,6 +205,46 @@ button:hover {
     overflow-y: auto;
 }
 
+.post-content h1, .post-content h2, .post-content h3 {
+    margin: 16px 0 8px 0;
+    font-weight: 600;
+}
+
+.post-content h1 { font-size: 1.5em; }
+.post-content h2 { font-size: 1.3em; }
+.post-content h3 { font-size: 1.1em; }
+
+.post-content pre {
+    background-color: var(--vscode-textBlockQuote-background);
+    border: 1px solid var(--vscode-textBlockQuote-border);
+    border-radius: 4px;
+    padding: 12px;
+    overflow-x: auto;
+    margin: 12px 0;
+}
+
+.post-content code {
+    background-color: var(--vscode-textBlockQuote-background);
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: var(--vscode-editor-font-family);
+    font-size: 0.9em;
+}
+
+.post-content a {
+    color: var(--vscode-textLink-foreground);
+    text-decoration: none;
+}
+
+.post-content a:hover {
+    text-decoration: underline;
+}
+
+.post-content img, .post-content video {
+    border-radius: 4px;
+    border: 1px solid var(--vscode-panel-border);
+}
+
 .comment-section {
     border-top: 1px solid var(--vscode-panel-border);
     padding-top: 16px;
