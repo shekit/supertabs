@@ -1,3 +1,4 @@
+// Constants matching TypeScript
 const COMMANDS = {
     READY: 'ready',
     ADD_SUBREDDIT: 'addSubreddit',
@@ -17,7 +18,10 @@ const MESSAGE_TYPES = {
     REFRESH_STATUS: 'refreshStatus'
 };
 
+// VSCode API
 const vscode = acquireVsCodeApi();
+
+// Global state
 let currentSettings = { 
     subreddits: [], 
     businessPrompt: '',
@@ -26,10 +30,17 @@ let currentSettings = {
 let nextRefreshTime = null;
 let countdownInterval = null;
 
+// Section collapse state
+let sectionStates = {
+    subredditSection: false,
+    promptSection: false,
+    refreshSection: true  // Start collapsed
+};
+
 // Initialize
 vscode.postMessage({ command: COMMANDS.READY });
 
-// Listen for messages
+// Listen for messages from extension
 window.addEventListener('message', event => {
     const message = event.data;
     
@@ -50,6 +61,7 @@ window.addEventListener('message', event => {
     }
 });
 
+// UI Update Functions
 function updateUI() {
     // Update subreddit list
     const listEl = document.getElementById('subredditList');
@@ -65,15 +77,104 @@ function updateUI() {
     
     // Update refresh interval
     document.getElementById('refreshInterval').value = currentSettings.refreshInterval || 300;
+    
+    // Update summaries
+    updateSectionSummaries();
+    
+    // Auto-collapse sections after initial setup if they have values
+    const state = vscode.getState();
+    if (!state || !state.hasAutoCollapsed) {
+        if (currentSettings.subreddits.length > 0 && !sectionStates.subredditSection) {
+            toggleSection('subredditSection');
+        }
+        if (currentSettings.businessPrompt && !sectionStates.promptSection) {
+            toggleSection('promptSection');
+        }
+        vscode.setState({ ...vscode.getState(), hasAutoCollapsed: true });
+    }
 }
 
+// Section Management
+function toggleSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    const isCollapsed = section.classList.toggle('collapsed');
+    sectionStates[sectionId] = isCollapsed;
+    
+    // Save state
+    vscode.setState({ ...vscode.getState(), sectionStates });
+    
+    updateSectionSummaries();
+}
+
+function toggleAllSettings() {
+    const allCollapsed = Object.values(sectionStates).every(state => state);
+    
+    ['subredditSection', 'promptSection', 'refreshSection'].forEach(sectionId => {
+        const section = document.getElementById(sectionId);
+        if (allCollapsed) {
+            section.classList.remove('collapsed');
+            sectionStates[sectionId] = false;
+        } else {
+            section.classList.add('collapsed');
+            sectionStates[sectionId] = true;
+        }
+    });
+    
+    vscode.setState({ ...vscode.getState(), sectionStates });
+    updateSectionSummaries();
+}
+
+function updateSectionSummaries() {
+    // Subreddit summary
+    const subredditSummary = document.getElementById('subredditSummary');
+    if (currentSettings.subreddits.length > 0) {
+        subredditSummary.textContent = `(${currentSettings.subreddits.length} subreddits)`;
+    } else {
+        subredditSummary.textContent = '(none)';
+    }
+    
+    // Prompt summary
+    const promptSummary = document.getElementById('promptSummary');
+    if (currentSettings.businessPrompt) {
+        const truncated = currentSettings.businessPrompt.substring(0, 50);
+        promptSummary.textContent = `(${truncated}${currentSettings.businessPrompt.length > 50 ? '...' : ''})`;
+    } else {
+        promptSummary.textContent = '(not set)';
+    }
+    
+    // Refresh summary
+    const refreshSummary = document.getElementById('refreshSummary');
+    refreshSummary.textContent = `(every ${currentSettings.refreshInterval}s)`;
+}
+
+// Restore section states on load
+function restoreSectionStates() {
+    const state = vscode.getState();
+    if (state && state.sectionStates) {
+        sectionStates = state.sectionStates;
+        
+        // Apply saved states
+        Object.keys(sectionStates).forEach(sectionId => {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                if (sectionStates[sectionId]) {
+                    section.classList.add('collapsed');
+                } else {
+                    section.classList.remove('collapsed');
+                }
+            }
+        });
+    }
+}
+
+// Subreddit Management
 function addSubreddit() {
     const input = document.getElementById('subredditInput');
     const subreddit = input.value.trim().toLowerCase().replace(/^r\//, '');
     
     if (subreddit && !currentSettings.subreddits.includes(subreddit)) {
         vscode.postMessage({ 
-            command: commands.ADD_SUBREDDIT, 
+            command: COMMANDS.ADD_SUBREDDIT, 
             subreddit: subreddit 
         });
         input.value = '';
@@ -82,24 +183,26 @@ function addSubreddit() {
 
 function removeSubreddit(subreddit) {
     vscode.postMessage({ 
-        command: commands.REMOVE_SUBREDDIT, 
+        command: COMMANDS.REMOVE_SUBREDDIT, 
         subreddit: subreddit 
     });
 }
 
+// Business Prompt
 function savePrompt() {
     const prompt = document.getElementById('businessPrompt').value;
     vscode.postMessage({ 
-        command: commands.UPDATE_PROMPT, 
+        command: COMMANDS.UPDATE_PROMPT, 
         prompt: prompt 
     });
 }
 
+// Refresh Settings
 function updateRefreshInterval() {
     const interval = parseInt(document.getElementById('refreshInterval').value);
     if (interval >= 60 && interval <= 3600) {
         vscode.postMessage({ 
-            command: commands.UPDATE_REFRESH_INTERVAL, 
+            command: COMMANDS.UPDATE_REFRESH_INTERVAL, 
             interval: interval 
         });
     } else {
@@ -108,7 +211,7 @@ function updateRefreshInterval() {
 }
 
 function manualRefresh() {
-    vscode.postMessage({ command: commands.REFRESH });
+    vscode.postMessage({ command: COMMANDS.REFRESH });
 }
 
 function updateRefreshStatus(nextRefresh) {
@@ -142,6 +245,7 @@ function updateCountdown() {
         `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
+// Post Display
 function displayPosts(posts) {
     const container = document.getElementById('postsContainer');
     
@@ -150,7 +254,7 @@ function displayPosts(posts) {
         return;
     }
     
-    // For now, just show the first post
+    // Show only the first post
     const post = posts[0];
     container.innerHTML = `
         <div class="post-card">
@@ -172,7 +276,7 @@ function submitComment(postId) {
     const comment = document.getElementById('commentText').value;
     if (comment.trim()) {
         vscode.postMessage({ 
-            command: commands.SUBMIT_COMMENT, 
+            command: COMMANDS.SUBMIT_COMMENT, 
             postId: postId,
             comment: comment 
         });
@@ -181,7 +285,7 @@ function submitComment(postId) {
 
 function skipPost(postId) {
     vscode.postMessage({ 
-        command: commands.SKIP_POST, 
+        command: COMMANDS.SKIP_POST, 
         postId: postId 
     });
 }
@@ -191,6 +295,7 @@ function showError(message) {
         `<div class="loading" style="color: var(--vscode-errorForeground);">${message}</div>`;
 }
 
+// Utility Functions
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text || '';
@@ -206,9 +311,17 @@ function getTimeAgo(timestamp) {
     return Math.floor(seconds / 86400) + ' days ago';
 }
 
-// Add enter key support for subreddit input
+// Event Listeners
 document.getElementById('subredditInput').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
         addSubreddit();
     }
 });
+
+// Restore states on DOM load
+document.addEventListener('DOMContentLoaded', () => {
+    restoreSectionStates();
+});
+
+// Initialize
+restoreSectionStates();

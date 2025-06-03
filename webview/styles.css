@@ -11,21 +11,80 @@ body {
     max-width: 900px;
     margin: 0 auto;
     padding: 20px;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
 }
 
 .settings-section {
     background-color: var(--vscode-editor-background);
     border: 1px solid var(--vscode-panel-border);
     border-radius: 8px;
-    padding: 20px;
     margin-bottom: 20px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.settings-section.collapsed {
+    margin-bottom: 12px;
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.settings-header:hover {
+    background-color: var(--vscode-list-hoverBackground);
+}
+
+.settings-content {
+    padding: 0 20px 20px 20px;
+    max-height: 500px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.settings-section.collapsed .settings-content {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 .section-title {
     font-size: 16px;
     font-weight: 600;
-    margin-bottom: 12px;
+    margin: 0;
     color: var(--vscode-foreground);
+}
+
+.collapse-icon {
+    font-size: 12px;
+    color: var(--vscode-descriptionForeground);
+    transition: transform 0.3s ease;
+}
+
+.settings-section.collapsed .collapse-icon {
+    transform: rotate(-90deg);
+}
+
+.section-summary {
+    font-size: 12px;
+    color: var(--vscode-descriptionForeground);
+    margin-left: 12px;
+    display: none;
+}
+
+.settings-section.collapsed .section-summary {
+    display: inline;
+}
+
+.settings-section.collapsed .section-title-text {
+    display: inline;
 }
 
 .input-group {
@@ -107,6 +166,8 @@ button:hover {
 
 .posts-section {
     margin-top: 20px;
+    flex: 1;
+    overflow-y: auto;
 }
 
 .loading {

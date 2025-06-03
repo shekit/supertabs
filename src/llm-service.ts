@@ -63,16 +63,29 @@ export class LLMService {
                     role: 'user',
                     content: `Business/Expertise Context: ${businessPrompt}
 
-                    Analyze these Reddit posts and determine which ones are relevant for someone with the above expertise to comment on.`
+                    Analyze these Reddit posts and determine which ones are relevant for someone with the above expertise to comment on.
+                    
+                    <reddit_posts>
+                    ${JSON.stringify(postsData, null, 2)}
+                    </reddit_posts>`
                 }],
                 tools: [this.analyzePostsTool],
                 tool_choice: { type: 'tool', name: 'analyze_posts' }
             });
+
+            console.log('LLM Response:', JSON.stringify(response, null, 2));
             
             // Extract the tool use response
             const toolUse = response.content.find(block => block.type === 'tool_use');
             if (toolUse && toolUse.type === 'tool_use') {
                 const analysisResult = toolUse.input as { posts: PostRelevance[] };
+
+                console.log('Tool Use Input:', JSON.stringify(analysisResult, null, 2));
+            
+                // Log each post's analysis
+                analysisResult.posts.forEach(pr => {
+                    console.log(`Post ${pr.postId}: Relevant=${pr.isRelevant}, Score=${pr.relevanceScore}, Reason="${pr.reasoning}"`);
+                });
                 
                 // Create a map for quick lookup
                 const relevanceMap = new Map<string, PostRelevance>();
