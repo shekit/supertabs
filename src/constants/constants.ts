@@ -85,7 +85,7 @@ export const REDDIT = {
 
 // API models
 export const MODELS = {
-    CLAUDE: 'claude-3-5-sonnet-20241022'
+    CLAUDE: 'claude-sonnet-4-20250514'
 } as const;
 
 // UI text constants

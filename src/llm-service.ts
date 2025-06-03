@@ -56,7 +56,7 @@ export class LLMService {
             
             const response = await this.anthropic.messages.create({
                 model: MODELS.CLAUDE,
-                max_tokens: 8196,
+                max_tokens: 8192,
                 temperature: 0,
                 system: this.systemPrompt,
                 messages: [{
