@@ -1,75 +1,118 @@
-# supertabs README
+# Supertabs
 
-This is the README for your extension "supertabs". After writing up a brief description, we recommend including the following sections.
+A VSCode extension that surfaces Reddit posts where you can add value — filtered by Claude against a description of your expertise — and lets you comment on them without leaving the editor.
 
-# Create directory structure
+## How it works
 
-tree -I "node_modules|out" > directory_structure.txt
+1. You list the subreddits you want to monitor and write a short prompt describing your business, products, or expertise.
+2. Supertabs fetches new posts from those subreddits.
+3. Claude scores each post 1–10 for relevance against your prompt and explains why.
+4. The webview shows you the top-ranked unread post with a comment box. Submit a reply (posted to Reddit via your account) or skip — either way the post is marked seen and won't reappear.
+5. The feed auto-refreshes on a configurable interval.
 
-## Features
+## Setup
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+### 1. Create a Reddit OAuth app
 
-For example if there is an image subfolder under your extension project workspace:
+Go to https://www.reddit.com/prefs/apps and create a new app:
 
-\!\[feature X\]\(images/feature-x.png\)
+- Type: **web app**
+- Redirect URI: `http://localhost:54321/callback`
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+Copy the client ID (under the app name) and the secret.
 
-## Requirements
+### 2. Get an Anthropic API key
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+Create one at https://console.anthropic.com/.
 
-## Extension Settings
+### 3. Configure environment
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+```bash
+cp .env.example .env
+```
 
-For example:
+Fill in the three values in `.env`:
 
-This extension contributes the following settings:
+```
+REDDIT_CLIENT_ID=...
+REDDIT_CLIENT_SECRET=...
+CLAUDE_API_KEY=...
+```
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+`.env` is gitignored.
 
-## Known Issues
+### 4. Install & build
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+```bash
+npm install
+npm run compile
+```
 
-## Release Notes
+For active development:
 
-Users appreciate release notes as you update your extension.
+```bash
+npm run watch
+```
 
-### 1.0.0
+### 5. Run the extension
 
-Initial release of ...
+Open the project in VSCode and press `F5` to launch an Extension Development Host with Supertabs loaded.
 
-### 1.0.1
+## Usage
 
-Fixed issue #.
+Open the command palette (`Cmd+Shift+P`) and run:
 
-### 1.1.0
+- **Supertabs: Authenticate with Reddit** — opens a browser, completes OAuth, stores tokens in VSCode SecretStorage.
+- **Supertabs: Open Reddit Feed** — opens the main webview panel.
+- **Supertabs: Fetch from Reddit** — quick subreddit picker (debug helper).
+- **Supertabs: Logout from Reddit** — clears stored tokens.
 
-Added features X, Y, and Z.
+Inside the feed panel:
 
----
+- **Tracked Subreddits** — add/remove subreddits to monitor.
+- **Your Business/Interests** — the prompt Claude uses to filter posts. Be specific about what you can credibly speak to.
+- **Auto-Refresh Settings** — interval in seconds (60–3600).
 
-## Following extension guidelines
+Posts are sorted by Claude's relevance score, shown one at a time. Submitting a comment posts it to Reddit immediately under the authenticated account.
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
+## Configuration reference
 
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
+Defaults live in [`src/storage-service.ts`](src/storage-service.ts) and [`src/constants/constants.ts`](src/constants/constants.ts):
 
-## Working with Markdown
+| Setting | Default | Notes |
+| --- | --- | --- |
+| Subreddits | `programming`, `webdev`, `node` | Per-user, stored in `globalState` |
+| Refresh interval | 300s | Min 60, max 3600 |
+| Posts fetched per subreddit | 5 | `REDDIT.NUM_POSTS` |
+| OAuth scopes | `read,submit,identity` | |
+| OAuth callback | `http://localhost:54321/callback` | |
+| Claude model | `claude-sonnet-4-20250514` | |
 
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
+## Project layout
 
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
+```
+src/
+  extension.ts          # activation, command registration
+  auth.ts               # Reddit OAuth (Express callback server)
+  reddit-service.ts     # Reddit REST client
+  llm-service.ts        # Claude-based relevance filter
+  storage-service.ts    # globalState wrapper (settings + seen posts)
+  webview-provider.ts   # webview panel + message routing
+  constants/constants.ts
+webview/                # vanilla HTML/CSS/JS UI
+prompts/filter-prompt.txt          # system prompt for the LLM
+tools/analyze-posts-tool.json      # Anthropic tool schema
+```
 
-## For more information
+## Tweaking the filter
 
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+The system prompt and tool schema are externalized — edit them without rebuilding TypeScript:
 
-**Enjoy!**
+- [`prompts/filter-prompt.txt`](prompts/filter-prompt.txt) — what counts as "relevant"
+- [`tools/analyze-posts-tool.json`](tools/analyze-posts-tool.json) — the schema Claude returns (`postId`, `isRelevant`, `relevanceScore`, `reasoning`)
+
+## Known limitations
+
+- No access-token refresh — re-run **Authenticate** when the token expires (~1h).
+- `processedPosts` is stored indefinitely in `globalState`; clear it via `StorageService.clearProcessedPosts` if needed.
+- Webview renders post bodies as markdown without sanitization — only run on Reddit content you trust.
