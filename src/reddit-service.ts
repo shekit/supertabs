@@ -89,12 +89,12 @@ export class RedditService {
         }
     }
 
-    async getMultipleSubreddits(subreddits: string[]): Promise<RedditPost[]> {
+    async getMultipleSubreddits(subreddits: string[], limit: number = REDDIT.NUM_POSTS): Promise<RedditPost[]> {
         const allPosts: RedditPost[] = [];
-        
+
         for (const subreddit of subreddits) {
             try {
-                const posts = await this.getSubredditPosts(subreddit);
+                const posts = await this.getSubredditPosts(subreddit, 'new', limit);
                 allPosts.push(...posts);
             } catch (error) {
                 console.error(`Failed to fetch r/${subreddit}, skipping...`);
@@ -150,36 +150,4 @@ export class RedditService {
         }
     }
 
-    // Also add a method to get post details (useful for showing context)
-    async getPostDetails(postId: string): Promise<RedditPost | null> {
-        try {
-            // Fetch the specific post
-            const response = await this.axiosInstance.get(`/api/info`, {
-                params: { id: `t3_${postId}` }
-            });
-            
-            if (response.data?.data?.children?.length > 0) {
-                const postData = response.data.data.children[0].data;
-                return {
-                    id: postData.id,
-                    title: postData.title,
-                    author: postData.author,
-                    subreddit: postData.subreddit,
-                    created_utc: postData.created_utc,
-                    selftext: postData.selftext,
-                    url: postData.url,
-                    permalink: `https://reddit.com${postData.permalink}`,
-                    score: postData.score,
-                    num_comments: postData.num_comments,
-                    link_flair_text: postData.link_flair_text
-                };
-            }
-            
-            return null;
-        } catch (error) {
-            console.error('Failed to fetch post details:', error);
-            return null;
-        }
-    }
-    
 }

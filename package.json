@@ -40,10 +40,6 @@
       {
         "command": "supertabs.logout",
         "title": "Supertabs: Logout from Reddit"
-      },
-      {
-        "command": "supertabs.test",
-        "title": "Supertabs: Test"
       }
     ]
   },

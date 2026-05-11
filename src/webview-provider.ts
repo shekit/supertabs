@@ -212,7 +212,7 @@ export class RedditWebviewProvider {
             }, async (progress) => {
                 progress.report({ increment: 0, message: "Fetching posts from Reddit..." });
                 
-                const allPosts = await this.redditService.getMultipleSubreddits(settings.subreddits);
+                const allPosts = await this.redditService.getMultipleSubreddits(settings.subreddits, settings.postsPerSubreddit);
                 const unseenPosts = allPosts.filter(post => !processedPosts.includes(post.id));
                 
                 console.log(`Fetched ${allPosts.length} posts, ${unseenPosts.length} are new`);
