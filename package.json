@@ -3,6 +3,18 @@
   "displayName": "Supertabs",
   "description": "Run your command center directly from your IDE",
   "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shekit/supertabs.git"
+  },
+  "keywords": [
+    "reddit",
+    "claude",
+    "anthropic",
+    "ai",
+    "feed",
+    "marketing"
+  ],
   "engines": {
     "vscode": "^1.100.0"
   },
